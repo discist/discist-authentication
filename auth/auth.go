@@ -131,21 +131,26 @@ func Login(ctx *fiber.Ctx) error {
 
 		controllers.RedisAddKey(uuid, stringObjectID)
 		fmt.Println("Added to redis")
-		var sessiondata models.Session
-		sessiondata.Uuid = uuid
-		sessiondata.Device = "macbook pro"
-		sessiondata.Location = "cloudflake hong-kong"
-		var sessiondatas models.Session
-		sessiondatas.Uuid = uuid
-		sessiondatas.Device = "iphone 11 pro"
-		sessiondatas.Location = "act fiber chennei"
-		sessionarray := []models.Session{sessiondata, sessiondatas}
+		fmt.Println("creating session object to add to db")
+		var Newsessiondata models.Session
+		Newsessiondata.Uuid = uuid
+		UserAgent := ctx.GetRespHeader("User-Agent")
+		UserIp := ctx.IP()
+		deeets := fmt.Sprintf(`IP:%s Device: %s`, UserIp, UserAgent)
+		fmt.Println(deeets, "these are the dear deets")
+		Newsessiondata.Device = deeets
+		Newsessiondata.Location = "cloudflake hong-kong"
 
-		var updateduserinfo models.User
-
-		updateduserinfo.Sessions = sessionarray
-
-		controllers.UpdateSessions("_id", stringObjectID, updateduserinfo)
+		var res models.User
+		res, err = controllers.GetByID(userinfo.ID.Hex())
+		if err != nil {
+			return ctx.
+				Status(http.StatusInternalServerError).
+				JSON(utils.NewJError(err))
+		}
+		ExistingSesionsArray := res.Sessions
+		ExistingSesionsArray = append(ExistingSesionsArray, Newsessiondata)
+		controllers.UpdateSessions("_id", stringObjectID, ExistingSesionsArray)
 
 		return ctx.
 			Status(http.StatusAccepted).
@@ -163,5 +168,60 @@ func Login(ctx *fiber.Ctx) error {
 	}
 
 	return err
+
+}
+
+func LogoutAll(ctx *fiber.Ctx) error {
+
+	fmt.Println("deleting all sessions")
+	var sessionID models.Session
+
+	err := ctx.BodyParser(&sessionID)
+	if err != nil {
+		return ctx.
+			Status(http.StatusBadRequest).
+			JSON(utils.NewJError(err))
+	}
+	if sessionID.Uuid == "" {
+		return ctx.
+			Status(http.StatusBadRequest).
+			JSON(utils.NewJError(utils.ErrNoSession))
+
+	}
+
+	userID, err := controllers.RedisGetKey(sessionID.Uuid)
+	if userID == "" {
+		fmt.Println(err)
+		return ctx.
+			Status(http.StatusUnauthorized).
+			JSON(utils.NewJError(utils.ErrNoSession))
+	}
+
+	var userInfo models.User
+
+	if userID != "" {
+		userInfo, err = controllers.GetByID(userID)
+		if err != nil {
+			return ctx.
+				Status(http.StatusBadGateway).
+				JSON(utils.NewJError(utils.ErrNoSession))
+		}
+
+	}
+
+	fmt.Println(userInfo)
+
+	empty := []models.Session{}
+
+	err = controllers.UpdateSessions("_id", userInfo.ID.Hex(), empty)
+	if err != nil {
+		return ctx.
+			Status(http.StatusBadRequest).
+			JSON(utils.NewJError(err))
+	}
+
+	return ctx.
+		Status(http.StatusAccepted).
+		JSON(fiber.Map{"deleted-all": userInfo.Sessions})
 
 }

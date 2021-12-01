@@ -57,17 +57,21 @@ func UpdatePassword(key string, value string, user models.User) {
 
 }
 
-func UpdateSessions(key string, value string, user models.User) {
+func UpdateSessions(key string, value string, empty []models.Session) error {
 
-	id, _ := primitive.ObjectIDFromHex(value)
+	id, err := primitive.ObjectIDFromHex(value)
+	if err != nil {
+		panic(err)
+	}
 	filter := bson.D{{key, id}}
+	fmt.Println(id)
 
-	update := bson.D{{"$set", bson.D{{"sessions", user.Sessions}}}}
+	update := bson.D{{"$set", bson.D{{"sessions", empty}}}}
 
-	_, e := userCollection.UpdateOne(context.Background(), filter, update)
-	utils.CheckErorr(e)
+	_, err = userCollection.UpdateOne(context.Background(), filter, update)
+	utils.CheckErorr(err)
 	fmt.Println("update sucesss")
-
+	return err
 }
 
 func GetByKey(key string, value string) (models.User, error) {

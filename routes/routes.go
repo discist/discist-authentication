@@ -11,4 +11,5 @@ func Install(app *fiber.App) {
 	app.Post("/signup", auth.Signup)
 	app.Post("/login", auth.Login)
 	app.Get("/getmydata", base.GetMyData)
+	app.Post("/logoutall", auth.LogoutAll)
 }
