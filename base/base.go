@@ -12,14 +12,16 @@ import (
 
 func GetMyData(ctx *fiber.Ctx) error {
 
-	//to discis
-
-	//header := ctx.GetRespHeader("Content-Type")
-	authheader := ctx.GetRespHeader("Content-Type")
-	fmt.Println(authheader)
-
 	var sessionid models.Session
+
 	err := ctx.BodyParser(&sessionid)
+	if sessionid.Uuid == "" {
+
+		return ctx.
+			Status(http.StatusBadRequest).
+			JSON(utils.NewJError(utils.ErrEmailAlreadyExists))
+
+	}
 	if err != nil {
 		return ctx.
 			Status(http.StatusBadRequest).
@@ -27,6 +29,7 @@ func GetMyData(ctx *fiber.Ctx) error {
 	}
 
 	userID, err := controllers.RedisGetKey(sessionid.Uuid)
+	fmt.Println("sesssionid from frontend ", sessionid)
 	if userID == "" {
 		return ctx.
 			Status(http.StatusUnauthorized).
@@ -34,9 +37,9 @@ func GetMyData(ctx *fiber.Ctx) error {
 	}
 
 	if userID != "" {
-		//fmt.Println(userID)
-		var userInfo models.User
-		userInfo, err := controllers.GetByID(userID)
+		fmt.Println(userID, "this is obj id")
+		var userInfo models.UserAllData
+		userInfo, err := controllers.GetFullDoc(userID)
 		if err != nil {
 			return ctx.
 				Status(http.StatusBadGateway).
@@ -45,8 +48,62 @@ func GetMyData(ctx *fiber.Ctx) error {
 
 		return ctx.
 			Status(http.StatusAccepted).
-			JSON(fiber.Map{"userdata": userInfo, "headers": authheader})
+			JSON(fiber.Map{"userdata": userInfo})
 
+	}
+
+	return err
+
+}
+
+func UpdateData(ctx *fiber.Ctx) error {
+
+	var updatedata models.UpdateUser
+
+	err := ctx.BodyParser(&updatedata)
+
+	fmt.Println(updatedata)
+
+	if updatedata.Username != "" {
+
+		id, err := controllers.RedisGetKey(updatedata.Uuid)
+		if err != nil {
+
+			return ctx.
+				Status(http.StatusBadRequest).
+				JSON(utils.NewJError(err))
+		}
+
+		err = controllers.AddNewKey(id, "username", updatedata.Username)
+		if err != nil {
+			return ctx.
+				Status(http.StatusBadRequest).
+				JSON(utils.NewJError(err))
+		}
+		err = controllers.AddNewKey(id, "story", updatedata.Story)
+		if err != nil {
+			return ctx.
+				Status(http.StatusBadRequest).
+				JSON(utils.NewJError(err))
+		}
+		err = controllers.AddNewKey(id, "subject", updatedata.Subject)
+		if err != nil {
+			return ctx.
+				Status(http.StatusBadRequest).
+				JSON(utils.NewJError(err))
+		}
+
+		err = controllers.AddNewKey(id, "state", updatedata.State)
+
+		if err != nil {
+			return ctx.
+				Status(http.StatusBadRequest).
+				JSON(utils.NewJError(err))
+		}
+
+		return ctx.
+			Status(http.StatusAccepted).
+			JSON(fiber.Map{"response": "data updated"})
 	}
 
 	return err

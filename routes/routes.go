@@ -10,6 +10,10 @@ import (
 func Install(app *fiber.App) {
 	app.Post("/signup", auth.Signup)
 	app.Post("/login", auth.Login)
-	app.Get("/getmydata", base.GetMyData)
+	app.Post("/getmydata", base.GetMyData)
+
 	app.Post("/logoutall", auth.LogoutAll)
+	app.Post("/logout", auth.Logoutsession)
+
+	app.Post("/updatedata", base.UpdateData)
 }

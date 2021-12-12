@@ -37,6 +37,8 @@ func SessionLookup(session models.Session, ctx *fiber.Ctx) (models.User, error) 
 			Status(http.StatusUnauthorized).
 			JSON(utils.NewJError(utils.ErrNoSession))
 
+		//BRB got guest <--
+
 	}
 
 	if userID != "" {

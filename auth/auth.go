@@ -84,7 +84,7 @@ func Signup(ctx *fiber.Ctx) error {
 
 		return ctx.
 			Status(http.StatusAccepted).
-			JSON(fiber.Map{"user created": "gg"})
+			JSON(fiber.Map{"usercreated": "gg you are registered"})
 
 	}
 
@@ -93,7 +93,8 @@ func Signup(ctx *fiber.Ctx) error {
 }
 
 func Login(ctx *fiber.Ctx) error {
-	var loginUser models.User
+
+	var loginUser models.Login
 
 	err := ctx.BodyParser(&loginUser)
 	if err != nil {
@@ -112,7 +113,7 @@ func Login(ctx *fiber.Ctx) error {
 
 	userinfo, err := controllers.GetByEmail(loginUser.Email)
 	utils.CheckErorr(err)
-	fmt.Println(userinfo.Email)
+	//fmt.Println(userinfo.Email)
 	if err != nil {
 		log.Println("login failed")
 		return ctx.
@@ -134,12 +135,11 @@ func Login(ctx *fiber.Ctx) error {
 		fmt.Println("creating session object to add to db")
 		var Newsessiondata models.Session
 		Newsessiondata.Uuid = uuid
-		UserAgent := ctx.GetRespHeader("User-Agent")
-		UserIp := ctx.IP()
-		deeets := fmt.Sprintf(`IP:%s Device: %s`, UserIp, UserAgent)
-		fmt.Println(deeets, "these are the dear deets")
-		Newsessiondata.Device = deeets
-		Newsessiondata.Location = "cloudflake hong-kong"
+		UserAgent := loginUser.Device
+		UserGeoIp := loginUser.Location
+
+		Newsessiondata.Device = UserAgent
+		Newsessiondata.Location = UserGeoIp
 
 		var res models.User
 		res, err = controllers.GetByID(userinfo.ID.Hex())
@@ -151,6 +151,7 @@ func Login(ctx *fiber.Ctx) error {
 		ExistingSesionsArray := res.Sessions
 		ExistingSesionsArray = append(ExistingSesionsArray, Newsessiondata)
 		controllers.UpdateSessions("_id", stringObjectID, ExistingSesionsArray)
+		fmt.Println("added new user session:   ", res.Email)
 
 		return ctx.
 			Status(http.StatusAccepted).
@@ -209,7 +210,7 @@ func LogoutAll(ctx *fiber.Ctx) error {
 
 	}
 
-	fmt.Println(userInfo)
+	//fmt.Println(userInfo)
 
 	empty := []models.Session{}
 
@@ -224,4 +225,42 @@ func LogoutAll(ctx *fiber.Ctx) error {
 		Status(http.StatusAccepted).
 		JSON(fiber.Map{"deleted-all": userInfo.Sessions})
 
+}
+
+///////////
+
+func Logoutsession(ctx *fiber.Ctx) error {
+	fmt.Println("deleting session")
+	var sessionID models.Session
+
+	err := ctx.BodyParser(&sessionID)
+
+	if err != nil {
+		return ctx.
+			Status(http.StatusBadRequest).
+			JSON(utils.NewJError(utils.ErrEmailAlreadyExists))
+	}
+	if sessionID.Uuid == "" {
+		return ctx.
+			Status(http.StatusBadRequest).
+			JSON(utils.NewJError(utils.ErrNoSession))
+
+	}
+
+	err = controllers.RedisDelKey(sessionID.Uuid)
+	if err != nil {
+		return ctx.
+			Status(http.StatusBadRequest).
+			JSON(utils.NewJError(err))
+
+	}
+	if err == nil {
+		fmt.Println("deleted success")
+		return ctx.
+			Status(http.StatusAccepted).
+			JSON(fiber.Map{"succes": "gg"})
+
+	}
+
+	return err
 }

@@ -57,6 +57,25 @@ func UpdatePassword(key string, value string, user models.User) {
 
 }
 
+func AddNewKey(objid string, addkey string, addvalue string) error {
+	_id, err := primitive.ObjectIDFromHex(objid)
+	if err != nil {
+
+		return err
+
+	}
+	filter := bson.D{{"_id", _id}}
+
+	update := bson.D{{"$set", bson.D{{addkey, addvalue}}}}
+
+	_, e := userCollection.UpdateOne(context.Background(), filter, update)
+	utils.CheckErorr(e)
+	fmt.Println("update sucesss")
+
+	return err
+
+}
+
 func UpdateSessions(key string, value string, empty []models.Session) error {
 
 	id, err := primitive.ObjectIDFromHex(value)
@@ -114,6 +133,18 @@ func Delete(id string) (*mongo.DeleteResult, error) {
 	return res, err
 }
 
+func GetFullDoc(value string) (models.UserAllData, error) {
+	_id, err1 := primitive.ObjectIDFromHex(value)
+	utils.CheckErorr(err1)
+	filter := bson.D{{"_id", _id}}
+	var res models.UserAllData
+
+	err := userCollection.FindOne(context.Background(), filter).Decode(&res)
+
+	return res, err
+
+}
+
 func GetAll() []models.User {
 	cursor, err := userCollection.Find(context.Background(), bson.D{})
 	if err != nil {
@@ -154,6 +185,7 @@ func RedisAddKey(key string, value string) error {
 
 func RedisGetKey(key string) (string, error) {
 	value, err := rdb.Get(ctx, key).Result()
+
 	if err == redis.Nil {
 		fmt.Printf("%s doesnt exist \n", key)
 		return "", err
@@ -165,5 +197,23 @@ func RedisGetKey(key string) (string, error) {
 	}
 
 	return value, nil
+
+}
+
+func RedisDelKey(key string) error {
+	value, err := rdb.Del(ctx, key).Result()
+
+	if err == redis.Nil {
+		fmt.Printf("%s doesnt exist \n", key)
+		fmt.Println(value)
+		return err
+
+	} else if err != nil {
+		logrus.Info(err)
+		return err
+
+	}
+
+	return nil
 
 }

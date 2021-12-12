@@ -15,10 +15,15 @@ import (
 func main() {
 
 	fmt.Println("--- AUTHENTICATION SESSIONS ENDPOINT ---")
+
 	defer controllers.Close()
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		BodyLimit: 10 * 1024 * 1024,
+	})
+
 	app.Use(logger.New())
+	app.Static("/storage", "./uploads")
 	app.Use(cors.New(cors.Config{
 		AllowMethods:     "POST, GET, OPTIONS, PUT, DELETE",
 		AllowOrigins:     "*",
@@ -29,6 +34,6 @@ func main() {
 
 	routes.Install(app)
 
-	log.Fatal(app.Listen(":8080"))
+	log.Fatal(app.Listen(":8089"))
 
 }
