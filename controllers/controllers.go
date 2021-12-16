@@ -53,7 +53,6 @@ func UpdatePassword(key string, value string, user models.User) {
 
 	_, e := userCollection.UpdateOne(context.Background(), filter, update)
 	utils.CheckErorr(e)
-	fmt.Println("update sucesss")
 
 }
 
@@ -68,9 +67,11 @@ func AddNewKey(objid string, addkey string, addvalue string) error {
 
 	update := bson.D{{"$set", bson.D{{addkey, addvalue}}}}
 
-	_, e := userCollection.UpdateOne(context.Background(), filter, update)
-	utils.CheckErorr(e)
-	fmt.Println("update sucesss")
+	_, err = userCollection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		logrus.Info(err)
+	}
+	fmt.Println("updated ", addkey, addvalue)
 
 	return err
 
@@ -97,6 +98,28 @@ func GetByKey(key string, value string) (models.User, error) {
 
 	filter := bson.D{{key, value}}
 	var res models.User
+
+	err := userCollection.FindOne(context.Background(), filter).Decode(&res)
+
+	return res, err
+
+}
+func UGetByKey(key string, value string) (models.UpdateUser, error) {
+
+	filter := bson.D{{key, value}}
+	var res models.UpdateUser
+
+	err := userCollection.FindOne(context.Background(), filter).Decode(&res)
+
+	return res, err
+
+}
+
+func UGetByID(value string) (models.UpdateUser, error) {
+	_id, err1 := primitive.ObjectIDFromHex(value)
+	utils.CheckErorr(err1)
+	filter := bson.D{{"_id", _id}}
+	var res models.UpdateUser
 
 	err := userCollection.FindOne(context.Background(), filter).Decode(&res)
 
@@ -145,15 +168,15 @@ func GetFullDoc(value string) (models.UserAllData, error) {
 
 }
 
-func GetAll() []models.User {
+func GetAll() ([]models.UserAllDataPublic, error) {
 	cursor, err := userCollection.Find(context.Background(), bson.D{})
 	if err != nil {
 		log.Panic(err)
 	}
-	var docs []models.User
+	var docs []models.UserAllDataPublic
 
 	for cursor.Next(context.Background()) {
-		var single models.User
+		var single models.UserAllDataPublic
 		err := cursor.Decode(&single)
 		if err != nil {
 			log.Panic(err)
@@ -161,7 +184,7 @@ func GetAll() []models.User {
 		docs = append(docs, single)
 	}
 
-	return docs
+	return docs, err
 
 }
 
@@ -184,6 +207,7 @@ func RedisAddKey(key string, value string) error {
 }
 
 func RedisGetKey(key string) (string, error) {
+
 	value, err := rdb.Get(ctx, key).Result()
 
 	if err == redis.Nil {

@@ -7,16 +7,31 @@ import (
 )
 
 type UserAllData struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Email     string             `json:"email" bson:"email,omitempty"`
-	Password  string             `json:"password" bson:"password,omitempty"`
-	CreatedAt time.Time          `json:"createdAt" bson:"createdAt,omitempty"`
-	UpdatedAt time.Time          `json:"updatedAt" bson:"updatedAt,omitempty"`
-	Sessions  []Session          `json:"sessions" bson:"sessions,"`
-	Username  string             `json:"username" bson:"username,"`
-	Story     string             `json:"story" bson:"story,"`
-	Subject   string             `json:"subject" bson:"subject,"`
-	State     string             `json:"state" bson:"state,"`
+	ID              primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Email           string             `json:"email" bson:"email,omitempty"`
+	Password        string             `json:"password" bson:"password,omitempty"`
+	CreatedAt       time.Time          `json:"createdAt" bson:"createdAt,omitempty"`
+	UpdatedAt       time.Time          `json:"updatedAt" bson:"updatedAt,omitempty"`
+	Sessions        []Session          `json:"sessions" bson:"sessions,"`
+	Username        string             `json:"username" bson:"username,"`
+	Story           string             `json:"story" bson:"story,"`
+	Subject         string             `json:"subject" bson:"subject,"`
+	State           string             `json:"state" bson:"state,"`
+	ProfilePhotoUrl string             `json:"profilephotourl" bson:"profilephotourl,"`
+}
+
+type UserAllDataPublic struct {
+	ID primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	//Email           string             `json:"email" bson:"email,omitempty"`
+	//Password        string             `json:"password" bson:"password,omitempty"`
+	CreatedAt time.Time `json:"createdAt" bson:"createdAt,omitempty"`
+	//UpdatedAt       time.Time          `json:"updatedAt" bson:"updatedAt,omitempty"`
+	//Sessions        []Session          `json:"sessions" bson:"sessions,"`
+	Username        string `json:"username" bson:"username,"`
+	Story           string `json:"story" bson:"story,"`
+	Subject         string `json:"subject" bson:"subject,"`
+	State           string `json:"state" bson:"state,"`
+	ProfilePhotoUrl string `json:"profilephotourl" bson:"profilephotourl,"`
 }
 
 type User struct {
@@ -31,7 +46,7 @@ type User struct {
 type UpdateUser struct {
 	Uuid     string `json:"uuid" bson:"uuid,omitempty"`
 	Username string `json:"username" bson:"username,"`
-	Story    string `json:"story" bson:"stsory,"`
+	Story    string `json:"story" bson:"story,"`
 	Subject  string `json:"subject" bson:"subject,"`
 	State    string `json:"state" bson:"state,"`
 }
@@ -47,4 +62,8 @@ type Login struct {
 	Password string `json:"password" bson:"password,omitempty"`
 	Device   string `json:"device" bson:"device,omitempty"`
 	Location string `json:"location" bson:"location,omitempty"`
+}
+
+type UsernameCheck struct {
+	Username string `json:"username" bson:"username,omitempty"`
 }

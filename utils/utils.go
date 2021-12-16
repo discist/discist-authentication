@@ -5,5 +5,8 @@ import (
 )
 
 func NormalizeEmail(email string) string {
-	return strings.TrimSpace(strings.ToLower(email))
+
+	nospace := strings.Replace(email, " ", "", -1)
+	return strings.TrimSpace(strings.ToLower(nospace))
+
 }
