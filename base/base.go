@@ -5,7 +5,9 @@ import (
 	"authentication/models"
 	"authentication/utils"
 	"fmt"
+	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -64,10 +66,28 @@ func UpdateData(ctx *fiber.Ctx) error {
 	var updatedata models.UpdateUser
 
 	err := ctx.BodyParser(&updatedata)
+	if err != nil {
+		return ctx.
+			Status(http.StatusBadRequest).
+			JSON(utils.NewJError(err))
 
-	normailizedusername := utils.NormalizeEmail(updatedata.Username)
+	}
+
+	normailizedusernamex := utils.NormalizeEmail(updatedata.Username)
+
+	re, err := regexp.Compile(`[^\w]`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	normailizedusername := re.ReplaceAllString(normailizedusernamex, "")
+	fmt.Println(normailizedusername)
 
 	lenght := len(normailizedusername)
+	if lenght < 0 {
+		return ctx.
+			Status(http.StatusBadRequest).
+			JSON(fiber.Map{"error": "username-empty"})
+	}
 
 	if updatedata.Username != "" && lenght < 18 {
 
@@ -96,7 +116,45 @@ func UpdateData(ctx *fiber.Ctx) error {
 				fmt.Println("EXIST:", exist.Username, "REQ:", requestinguser.Username)
 				return ctx.
 					Status(http.StatusBadRequest).
-					JSON(fiber.Map{"error": "usernametaken"})
+					JSON(fiber.Map{"error": "usernnametaken"})
+			}
+
+			if exist.Username == requestinguser.Username {
+
+				fmt.Println("Username not changed")
+
+				err = controllers.AddNewKey(id, "username", normailizedusername)
+				if err != nil {
+					return ctx.
+						Status(http.StatusBadRequest).
+						JSON(utils.NewJError(err))
+				}
+				err = controllers.AddNewKey(id, "story", updatedata.Story)
+				if err != nil {
+					return ctx.
+						Status(http.StatusBadRequest).
+						JSON(utils.NewJError(err))
+				}
+
+				err = controllers.AddNewKey(id, "subject", updatedata.Subject)
+				if err != nil {
+					return ctx.
+						Status(http.StatusBadRequest).
+						JSON(utils.NewJError(err))
+				}
+
+				err = controllers.AddNewKey(id, "state", updatedata.State)
+
+				if err != nil {
+					return ctx.
+						Status(http.StatusBadRequest).
+						JSON(utils.NewJError(err))
+				}
+
+				return ctx.
+					Status(http.StatusAccepted).
+					JSON(fiber.Map{"response": "data updated"})
+
 			}
 
 		}
