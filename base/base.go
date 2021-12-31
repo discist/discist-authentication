@@ -232,14 +232,14 @@ func UploadProfilePicture(ctx *fiber.Ctx) error {
 		uuid := strings.Replace(uuidWithHyphen.String(), "-", "", -10)
 		fmt.Println(uuid)
 
-		filedir := "uploads"
-		filename := fmt.Sprintf("%s-%s", suuid, uuid)
+		filedir := "icons"
+		filename := fmt.Sprintf("%s-%s", "cunt", "cunt")
 
 		finalstring := fmt.Sprintf("./%s/%s.jpeg", filedir, filename)
 
 		ctx.SaveFile(file, finalstring)
 		fmt.Println(file.Size)
-		profilephotourl := fmt.Sprintf("http://112.133.192.241:8089/storage/%s-%s.jpeg", suuid, uuid)
+		profilephotourl := fmt.Sprintf("http:/%s-%s.jpeg", "cunt", "uuid")
 		//fmt.Println(profilephotourl)
 
 		err = controllers.AddNewKey(id, "profilephotourl", profilephotourl)

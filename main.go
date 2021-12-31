@@ -24,6 +24,7 @@ func main() {
 
 	app.Use(logger.New())
 	app.Static("/storage", "./uploads")
+	app.Static("/icons", "./icons")
 	app.Use(cors.New(cors.Config{
 		AllowMethods:     "POST, GET, OPTIONS, PUT, DELETE",
 		AllowOrigins:     "*",
@@ -34,6 +35,6 @@ func main() {
 
 	routes.Install(app)
 
-	log.Fatal(app.Listen(":8089"))
+	log.Fatal(app.Listen(":3001"))
 
 }

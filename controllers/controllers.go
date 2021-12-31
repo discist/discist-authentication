@@ -21,13 +21,95 @@ import (
 var rdb = db.RedisInit()
 var mongoclient = db.MongoInit()
 var userCollection = mongoclient.Database("discistuserdb").Collection("users")
+var PostCollection = mongoclient.Database("discistuserdb").Collection("posts")
 var ctx = context.Background()
+
+func PostSave(post *models.Post) (*mongo.InsertOneResult, error) {
+	w, err := PostCollection.InsertOne(context.Background(), post)
+
+	if err != nil {
+
+		fmt.Println(err)
+
+		return w, err
+
+	}
+	fmt.Println("new post added from:", post.Username)
+	return w, err
+
+}
+func PostDelete(id string) (*mongo.DeleteResult, error) {
+
+	_id, err1 := primitive.ObjectIDFromHex(id)
+	if err1 != nil {
+		panic(err1)
+	}
+
+	opts := options.Delete().SetCollation(&options.Collation{})
+
+	res, err := PostCollection.DeleteOne(context.Background(), bson.D{{"_id", _id}}, opts)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return res, err
+}
+
+func GetAllPosts() ([]models.Post, error) {
+	cursor, err := PostCollection.Find(context.Background(), bson.D{})
+	if err != nil {
+		log.Panic(err)
+	}
+	var docs []models.Post
+
+	for cursor.Next(context.Background()) {
+		var single models.Post
+		err := cursor.Decode(&single)
+		if err != nil {
+			log.Panic(err)
+		}
+		docs = append(docs, single)
+	}
+
+	return docs, err
+
+}
+
+func GetPostByID(value string) (models.Post, error) {
+	_id, err1 := primitive.ObjectIDFromHex(value)
+	utils.CheckErorr(err1)
+	filter := bson.D{{"_id", _id}}
+	var res models.Post
+
+	err := PostCollection.FindOne(context.Background(), filter).Decode(&res)
+
+	return res, err
+
+}
+
+func DeletePost(id string) (*mongo.DeleteResult, error) {
+
+	_id, err1 := primitive.ObjectIDFromHex(id)
+	if err1 != nil {
+		panic(err1)
+	}
+
+	opts := options.Delete().SetCollation(&options.Collation{})
+
+	res, err := PostCollection.DeleteOne(context.Background(), bson.D{{"_id", _id}}, opts)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return res, err
+}
 
 func Save(user *models.User) error { //   save to db
 
 	_, err := userCollection.InsertOne(context.Background(), user)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		return err
 	}
 	fmt.Println("ADDED NEW USER ", user.Email)
 	return err
@@ -77,6 +159,44 @@ func AddNewKey(objid string, addkey string, addvalue string) error {
 
 }
 
+func AddNewArray(objid string, addkey string, addvalue []string) error {
+	_id, err := primitive.ObjectIDFromHex(objid)
+	if err != nil {
+
+		return err
+
+	}
+	filter := bson.D{{"_id", _id}}
+
+	update := bson.D{{"$set", bson.D{{addkey, addvalue}}}}
+
+	_, err = userCollection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		logrus.Info(err)
+	}
+	//fmt.Println("updated ", addkey, addvalue)
+
+	return err
+
+}
+
+func Updateposts(key string, value string, empty []string) error {
+
+	id, err := primitive.ObjectIDFromHex(value)
+	if err != nil {
+		panic(err)
+	}
+	filter := bson.D{{key, id}}
+	fmt.Println(id)
+
+	update := bson.D{{"$set", bson.D{{"postID", empty}}}}
+
+	_, err = userCollection.UpdateOne(context.Background(), filter, update)
+	utils.CheckErorr(err)
+	fmt.Println("update sucesss")
+	return err
+}
+
 func UpdateSessions(key string, value string, empty []models.Session) error {
 
 	id, err := primitive.ObjectIDFromHex(value)
@@ -108,6 +228,17 @@ func UGetByKey(key string, value string) (models.UpdateUser, error) {
 
 	filter := bson.D{{key, value}}
 	var res models.UpdateUser
+
+	err := userCollection.FindOne(context.Background(), filter).Decode(&res)
+
+	return res, err
+
+}
+
+func AllDataGetByKey(key string, value string) (models.UserAllDataPublic, error) {
+
+	filter := bson.D{{key, value}}
+	var res models.UserAllDataPublic
 
 	err := userCollection.FindOne(context.Background(), filter).Decode(&res)
 
